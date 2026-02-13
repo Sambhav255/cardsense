@@ -1,0 +1,66 @@
+[
+  { 
+    "name": "Bilt Mastercard", 
+    "issuer": "Wells Fargo", 
+    "annualFee": 0, 
+    "pointValue": 0.01, 
+    "multipliers": { "rent": 1, "dining": 3, "travel": 2, "other": 1 },
+    "sub": 0
+  },
+  { 
+    "name": "Amex Gold", 
+    "issuer": "American Express", 
+    "annualFee": 250, 
+    "pointValue": 0.01, 
+    "multipliers": { "dining": 4, "grocery": 4, "travel": 3, "other": 1 },
+    "sub": 600
+  },
+  { 
+    "name": "Chase Sapphire Preferred", 
+    "issuer": "Chase", 
+    "annualFee": 95, 
+    "pointValue": 0.0125, 
+    "multipliers": { "travel": 2, "dining": 3, "other": 1 },
+    "sub": 750
+  },
+  { 
+    "name": "Chase Sapphire Reserve", 
+    "issuer": "Chase", 
+    "annualFee": 550, 
+    "pointValue": 0.015, 
+    "multipliers": { "travel": 3, "dining": 3, "other": 1 },
+    "sub": 900
+  },
+  { 
+    "name": "Chase Freedom Unlimited", 
+    "issuer": "Chase", 
+    "annualFee": 0, 
+    "pointValue": 0.01, 
+    "multipliers": { "dining": 3, "grocery": 1, "travel": 1.5, "other": 1.5 },
+    "sub": 200
+  },
+  { 
+    "name": "Capital One Venture X", 
+    "issuer": "Capital One", 
+    "annualFee": 395, 
+    "pointValue": 0.01, 
+    "multipliers": { "travel": 2, "other": 2 },
+    "sub": 750
+  },
+  { 
+    "name": "Capital One SavorOne", 
+    "issuer": "Capital One", 
+    "annualFee": 0, 
+    "pointValue": 0.01, 
+    "multipliers": { "dining": 3, "grocery": 3, "other": 1 },
+    "sub": 200
+  },
+  { 
+    "name": "Citi Double Cash", 
+    "issuer": "Citi", 
+    "annualFee": 0, 
+    "pointValue": 0.01, 
+    "multipliers": { "dining": 2, "grocery": 2, "travel": 2, "rent": 2, "other": 2 },
+    "sub": 200
+  }
+]

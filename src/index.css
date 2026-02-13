@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "system-ui", "sans-serif";
+  --letter-spacing-ultra: 0.3em;
+}
+
+@layer base {
+  body {
+    @apply bg-white text-black antialiased;
+    font-family: var(--font-sans);
+  }
+}
+
+/* Rigid Grid Styling */
+.bolt-grid {
+  @apply border border-black bg-black gap-px;
+}
+
+.animate-in {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
