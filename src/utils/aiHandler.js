@@ -10,7 +10,7 @@ export const analyzeStatement = async (text) => {
   // Production (e.g. Vercel): same origin, so relative /api/analyze. Local dev: Express runs on :3001.
   // Use relative path for API - works in both local dev and Vercel production
   try {
-    const response = await fetch('/api/analyze'
+    const response = await fetch('/api/analyze', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
