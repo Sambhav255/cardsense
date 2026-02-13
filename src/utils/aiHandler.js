@@ -8,10 +8,9 @@ export const analyzeStatement = async (text) => {
     : text;
 
   // Production (e.g. Vercel): same origin, so relative /api/analyze. Local dev: Express runs on :3001.
-  const baseUrl = import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:3001');
-  const apiRoot = baseUrl ? baseUrl.replace(/\/$/, '') : '';
+  // Use relative path for API - works in both local dev and Vercel production
   try {
-    const response = await fetch(`${apiRoot}/api/analyze`, {
+    const response = await fetch('/api/analyze'
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
