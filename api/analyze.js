@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export default async function handler(req, res) {
   // Only allow POST requests
@@ -9,7 +9,36 @@ export default async function handler(req, res) {
   const startTime = Date.now();
   
   try {
-    const { text } = req.body;
+    // Check if API key is available
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('ERROR: GEMINI_API_KEY environment variable is required');
+      return res.status(500).json({ 
+        error: 'API key not configured', 
+        code: 'missing_api_key'
+      });
+    }
+
+    // Initialize the Gemini API client
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    // Parse the request body
+    let text;
+    try {
+      if (typeof req.body === 'string') {
+        const parsed = JSON.parse(req.body);
+        text = parsed.text;
+      } else {
+        text = req.body.text;
+      }
+    } catch (e) {
+      console.error('Error parsing request body:', e);
+      return res.status(400).json({ 
+        error: 'Invalid request format',
+        code: 'invalid_format'
+      });
+    }
     
     // Validate input
     if (!text || typeof text !== 'string') {
@@ -19,67 +48,32 @@ export default async function handler(req, res) {
       });
     }
     
-    if (text.length > 60000) {
-      return res.status(400).json({ 
-        error: 'Text too long: maximum 60,000 characters allowed',
-        code: 'text_too_long'
-      });
-    }
+    // Limit text to avoid timeout (Vercel has a 10-second limit)
+    const maxChars = 15000;
+    const truncatedText = text.length > maxChars ? text.substring(0, maxChars) : text;
+    console.log(`Processing text of length: ${truncatedText.length} characters`);
     
-    console.log(`Processing text of length: ${text.length} characters`);
-    
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error('ERROR: GEMINI_API_KEY environment variable is required');
-      return res.status(500).json({ 
-        error: 'API key not configured', 
-        code: 'missing_api_key'
-      });
-    }
-    
-    const ai = new GoogleGenAI({ apiKey });
-    
-    const prompt = `You are a financial data parser.
-Analyze this credit card or bank statement text and estimate the total monthly spending in US dollars for the following categories:
-- dining
-- grocery 
-- travel
-- rent
-- other (everything else)
-Return ONLY a JSON object, no commentary or markdown.
-Format exactly:
+    const prompt = `You are a financial data parser. Analyze this bank statement text and estimate the total monthly spending in US dollars for these categories: dining, grocery, travel, rent, other.
+
+Return ONLY a valid JSON object with no additional text or markdown formatting:
 {"dining": 0, "grocery": 0, "travel": 0, "rent": 0, "other": 0}
-Text to analyze:
-${text}`;
+
+StatementText:\n${truncatedText}`;
+
+    // Call the Gemini API
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
     
-    let response;
-    try {
-      response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: prompt,
-      });
-    } catch (modelError) {
-      console.error('Model error:', modelError);
-      // Fallback to older model if needed
-      try {
-        response = await ai.models.generateContent({
-          model: "gemini-pro",
-          contents: prompt,
-        });
-      } catch (fallbackError) {
-        throw new Error('AI model unavailable');
-      }
-    }
+    // Parse the JSON response
+    const cleanedText = responseText
+      .replace(/```json/gi, '')
+      .replace(/```/g, '')
+      .trim();
     
-    const raw = response?.text;
-    if (raw == null || typeof raw !== "string") {
-      throw new Error("No valid response from AI model");
-    }
+    const parsed = JSON.parse(cleanedText);
     
-    const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(cleaned);
-    
-    const result = {
+    // Validate and normalize the response
+    const output = {
       dining: Number(parsed.dining ?? 0),
       grocery: Number(parsed.grocery ?? 0),
       travel: Number(parsed.travel ?? 0),
@@ -88,7 +82,7 @@ ${text}`;
     };
     
     console.log(`Analysis completed in ${Date.now() - startTime}ms`);
-    res.status(200).json(result);
+    res.status(200).json(output);
     
   } catch (error) {
     console.error('Analysis error:', error);
@@ -97,18 +91,18 @@ ${text}`;
     let errorCode = 'server_error';
     let errorMessage = 'Analysis failed due to server error';
     
-    if (error.message.includes('quota') || error.message.includes('429')) {
+    if (error.message && error.message.includes('quota')) {
       statusCode = 429;
       errorCode = 'quota_exceeded';
       errorMessage = 'API quota exceeded. Please try again later.';
-    } else if (error.message.includes('API key') || error.message.includes('403')) {
+    } else if (error.message && error.message.includes('API key')) {
       statusCode = 403;
       errorCode = 'invalid_api_key';
       errorMessage = 'Invalid API key configuration.';
-    } else if (error.message.includes('AI model unavailable')) {
-      statusCode = 503;
-      errorCode = 'model_unavailable';
-      errorMessage = 'AI service temporarily unavailable.';
+    } else if (error.message && error.message.includes('timeout')) {
+      statusCode = 504;
+      errorCode = 'timeout';
+      errorMessage = 'Request timed out. Please try with a shorter statement.';
     } else if (error instanceof SyntaxError) {
       statusCode = 422;
       errorCode = 'parse_error';
@@ -117,8 +111,7 @@ ${text}`;
     
     res.status(statusCode).json({ 
       error: errorMessage, 
-      code: errorCode,
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      code: errorCode
     });
   }
 }
