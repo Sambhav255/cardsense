@@ -21,8 +21,7 @@ export default async function handler(req, res) {
 
     // Initialize the Gemini API client
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
     // Parse the request body
     let text;
     try {
